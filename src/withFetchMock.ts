@@ -50,9 +50,7 @@ export const withFetchMock = makeDecorator({
     console.log("parameters", parameters)
     console.log("Start processing")
     // If requested, send debug info to the console.
-    console.log(fetchMock.called(), "|", parameters, "|", parameters.debug)
     if (fetchMock.called() && parameters && parameters.debug) {
-      console.log("Enter first condition")
       // Construct an object that easy to navigate in the console.
       const calls: { [key: string]: MockCall } = {};
       console.log(calls)
@@ -61,7 +59,6 @@ export const withFetchMock = makeDecorator({
       });
 
       // Send the debug data to the console.
-      console.log({ 'fetch-mock matched these mocks': calls });
     }
 
     // Remove any mocks from fetch-mock that may have been defined by other
