@@ -1,8 +1,8 @@
 import fetchMock from 'fetch-mock';
-import { MockCall } from 'fetch-mock/types';
-import { makeDecorator } from '@storybook/addons';
+import { makeDecorator } from '@storybook/preview-api';
 import { PARAM_KEY } from './constants';
-import { Mock, MockArray, MockObject } from './typings';
+import type { MockCall } from 'fetch-mock/types';
+import type { Mock, MockArray, MockObject } from './typings';
 
 /**
  * Helper function to add an array of mocks to fetch-mock.
@@ -44,10 +44,18 @@ export const withFetchMock = makeDecorator({
   skipIfNoParametersOrOptions: false,
 
   wrapper(storyFn, context, { parameters }) {
+    console.log('withFetchMock wrapper')
+    console.log("storyFn", storyFn)
+    console.log("context", context)
+    console.log("parameters", parameters)
+    console.log("Start processing")
     // If requested, send debug info to the console.
+    console.log(fetchMock.called(), "|", parameters, "|", parameters.debug)
     if (fetchMock.called() && parameters && parameters.debug) {
+      console.log("Enter first condition")
       // Construct an object that easy to navigate in the console.
       const calls: { [key: string]: MockCall } = {};
+      console.log(calls)
       fetchMock.calls().forEach((call) => {
         calls[call.identifier] = call;
       });
@@ -63,35 +71,42 @@ export const withFetchMock = makeDecorator({
     // By default, allow any fetch call not mocked to use the actual network.
     fetchMock.config.fallbackToNetwork = true;
 
-    // Add all the mocks.
-    addMocks(parameters.mocks);
+    if (parameters) {
+      console.log("Enter second condition")
+      // Add all the mocks.
+      addMocks(parameters.mocks);
+      console.log("parameters.useFetchMock", parameters.useFetchMock)
+      console.log("parameters.catchAllMocks", parameters.catchAllMocks)
 
-    // Do any additional configuration of fetchMock, e.g. setting
-    // fetchMock.config or calling other methods.
-    if (typeof parameters.useFetchMock === 'function') {
-      parameters.useFetchMock(fetchMock);
+      // Do any additional configuration of fetchMock, e.g. setting
+      // fetchMock.config or calling other methods.
+      if (typeof parameters.useFetchMock === 'function') {
+        parameters.useFetchMock(fetchMock);
+      }
+
+      // Add any catch-all mocks.
+      addMocks(parameters.catchAllMocks, 'catchAllMocks');
+
+      // Add any catch-all urls last.
+      if (Array.isArray(parameters.catchAllURLs)) {
+        console.log("Enter third condition")
+        parameters.catchAllURLs.forEach((url) => {
+          console.log("url", url)
+          fetchMock.mock(
+            {
+              // Add descriptive name for debugging.
+              name: `catchAllURLs[ ${url} ]`,
+              url: `begin:${url}`,
+            },
+            // Catch-all mocks will respond with 404 to make it easy to determine
+            // one of the catch-all mocks was used.
+            404,
+          );
+        });
+      }
     }
-
-    // Add any catch-all mocks.
-    addMocks(parameters.catchAllMocks, 'catchAllMocks');
-
-    // Add any catch-all urls last.
-    if (Array.isArray(parameters.catchAllURLs)) {
-      parameters.catchAllURLs.forEach((url) => {
-        fetchMock.mock(
-          {
-            // Add descriptive name for debugging.
-            name: `catchAllURLs[ ${url} ]`,
-            url: `begin:${url}`,
-          },
-          // Catch-all mocks will respond with 404 to make it easy to determine
-          // one of the catch-all mocks was used.
-          404,
-        );
-      });
-    }
-
     // Render the story.
+    console.log("End processing")
     return storyFn(context);
   },
 });
