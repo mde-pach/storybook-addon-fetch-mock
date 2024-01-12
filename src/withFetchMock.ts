@@ -44,10 +44,18 @@ export const withFetchMock = makeDecorator({
   skipIfNoParametersOrOptions: false,
 
   wrapper(storyFn, context, { parameters }) {
+    console.log('withFetchMock wrapper')
+    console.log("storyFn", storyFn)
+    console.log("context", context)
+    console.log("parameters", parameters)
+    console.log("Start processing")
     // If requested, send debug info to the console.
+    console.log(fetchMock.called(), "|", parameters, "|", parameters.debug)
     if (fetchMock.called() && parameters && parameters.debug) {
+      console.log("Enter first condition")
       // Construct an object that easy to navigate in the console.
       const calls: { [key: string]: MockCall } = {};
+      console.log(calls)
       fetchMock.calls().forEach((call) => {
         calls[call.identifier] = call;
       });
@@ -64,8 +72,11 @@ export const withFetchMock = makeDecorator({
     fetchMock.config.fallbackToNetwork = true;
 
     if (parameters) {
+      console.log("Enter second condition")
       // Add all the mocks.
       addMocks(parameters.mocks);
+      console.log("parameters.useFetchMock", parameters.useFetchMock)
+      console.log("parameters.catchAllMocks", parameters.catchAllMocks)
 
       // Do any additional configuration of fetchMock, e.g. setting
       // fetchMock.config or calling other methods.
@@ -78,7 +89,9 @@ export const withFetchMock = makeDecorator({
 
       // Add any catch-all urls last.
       if (Array.isArray(parameters.catchAllURLs)) {
+        console.log("Enter third condition")
         parameters.catchAllURLs.forEach((url) => {
+          console.log("url", url)
           fetchMock.mock(
             {
               // Add descriptive name for debugging.
@@ -93,6 +106,7 @@ export const withFetchMock = makeDecorator({
       }
     }
     // Render the story.
+    console.log("End processing")
     return storyFn(context);
   },
 });
