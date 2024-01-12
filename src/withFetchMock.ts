@@ -63,34 +63,35 @@ export const withFetchMock = makeDecorator({
     // By default, allow any fetch call not mocked to use the actual network.
     fetchMock.config.fallbackToNetwork = true;
 
-    // Add all the mocks.
-    addMocks(parameters.mocks);
+    if (parameters) {
+      // Add all the mocks.
+      addMocks(parameters.mocks);
 
-    // Do any additional configuration of fetchMock, e.g. setting
-    // fetchMock.config or calling other methods.
-    if (typeof parameters.useFetchMock === 'function') {
-      parameters.useFetchMock(fetchMock);
+      // Do any additional configuration of fetchMock, e.g. setting
+      // fetchMock.config or calling other methods.
+      if (typeof parameters.useFetchMock === 'function') {
+        parameters.useFetchMock(fetchMock);
+      }
+
+      // Add any catch-all mocks.
+      addMocks(parameters.catchAllMocks, 'catchAllMocks');
+
+      // Add any catch-all urls last.
+      if (Array.isArray(parameters.catchAllURLs)) {
+        parameters.catchAllURLs.forEach((url) => {
+          fetchMock.mock(
+            {
+              // Add descriptive name for debugging.
+              name: `catchAllURLs[ ${url} ]`,
+              url: `begin:${url}`,
+            },
+            // Catch-all mocks will respond with 404 to make it easy to determine
+            // one of the catch-all mocks was used.
+            404,
+          );
+        });
+      }
     }
-
-    // Add any catch-all mocks.
-    addMocks(parameters.catchAllMocks, 'catchAllMocks');
-
-    // Add any catch-all urls last.
-    if (Array.isArray(parameters.catchAllURLs)) {
-      parameters.catchAllURLs.forEach((url) => {
-        fetchMock.mock(
-          {
-            // Add descriptive name for debugging.
-            name: `catchAllURLs[ ${url} ]`,
-            url: `begin:${url}`,
-          },
-          // Catch-all mocks will respond with 404 to make it easy to determine
-          // one of the catch-all mocks was used.
-          404,
-        );
-      });
-    }
-
     // Render the story.
     return storyFn(context);
   },
